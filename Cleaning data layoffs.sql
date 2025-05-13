@@ -214,6 +214,67 @@ ALTER TABLE layoffs_staging_2
 DROP COLUMN row_num
 ;
 
+SELECT * 
+FROM layoffs_staging_2
+;
+
+SELECT MAX(total_laid_off), Max(percentage_laid_off) 
+FROM layoffs_staging_2
+;
+
+-- TRYING TO IDENTIFY WHAT THE MAX PEOPLE LAID OFF WAS AND THE HIGHEST %
+-- IN THE ABOVE QUERY WE SEE THAT THE HIGHEST AMOUNT OF PEOPLE LAIDED FROM A SINGLUAR COMPANY IN A SINGLE YEAR WAS 12,000 PEOPLE AND THAT ATLEAST ONE COMPANY ALSO HAD A 100% LAYOFF FROM 2020-2023 
+
+SELECT * 
+FROM layoffs_staging_2
+WHERE percentage_laid_off = 1
+ORDER BY total_laid_off DESC
+;
+
+-- IN THE ABOVE QUERY TRYING TO IDENTIFY WHAT WHICH COMPANIES HAD A 100% lay off and I ordered it by amount of employees laid off, this can also tell us how big the company was 
+-- we can also see that the majority of those companies that had a 100% layoff rate had less than 1,00 employees
+
+SELECT * 
+FROM layoffs_staging_2
+WHERE percentage_laid_off = 1
+ORDER BY funds_raised_millions DESC
+;
+
+-- Here we are looking at the same thing however instead ordering the data by total laid off we are ordering it by funds raised 
+-- This could tell us how big the commpany was and their economic impact and we can also see that majority of the companies that had that100% layoff were companies that had less than $600 million raised 
+
+SELECT company, SUM(total_laid_off) 
+FROM layoffs_staging_2
+GROUP BY company 
+ORDER BY 2 DESC
+;
+
+-- Here I was tryigbn to look at which companies had the highest people layed off over the 4 years, as we can see Amazon tops the list at 18150 people layed off 
+-- The query also is ordered by the SUM(total_laid_off) 
+
+SELECT MIN(`date`), MAX(`date`)
+FROM layoffs_staging_2
+GROUP BY industry 
+ORDER BY 2 DESC
+;
+
+-- 
+
+SELECT funds_raised_millions, (select AVG(funds_raised_millions) FROM layoffs_staging_2) AS AVG_Funds
+FROM layoffs_staging_2
+;
+
+SELECT *, (SELECT ROUND((AVG(funds_raised_millions))) FROM (SELECT funds_raised_millions 
+	FROM layoffs_staging_2
+	WHERE funds_raised_millions IS NOT NULL
+	ORDER BY funds_raised_millions DESC
+	LIMIT 10) AS FUNDS_TABLE) AS Avg_top_5
+FROM layoffS_staging_2
+; 
+-- Here we are looking for the average funds raised from the 10 companies that had the highest funds raised 
+
+
+
 
 
 
