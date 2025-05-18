@@ -273,8 +273,46 @@ FROM layoffS_staging_2
 ; 
 -- Here we are looking for the average funds raised from the 10 companies that had the highest funds raised 
 
+SELECT country, Count(total_laid_off) as Layoffs_per_country
+FROM layoffs_staging_2
+GROUP BY country 
+ORDER BY 2 DESC
+;
+-- Here we are looking at the amount of layoff per country from 2020-2023
+-- the data could be skewed towards the U.S. as seen in regards to the query below, this dataset is heavily leaned towards the U.S. as they make up 64.9% of all data entries   
 
+SELECT country, Count(country) as companies_per_country 
+FROM layoffs_staging_2
+GROUP BY country
+ORDER BY 2 DESC
+;
 
+SELECT COUNT(country)
+FROM layoffs_staging_2
+;
 
+SELECT country, total_laid_off, COUNT(country) as countries_with_nulls 
+FROM layoffs_staging_2
+GROUP BY 1,2
+HAVING total_laid_off IS NULL
+ORDER BY 3 DESC
+;
+-- The Purpose of this query was to locate the amount of NULL values per country 
+-- As we can see, the U.S. has the most amount of NULL values which would not affect its place in this dataset as being the country with the highest amount of layoffs, HOWEVER we have to go back to the fact that the U.S. represent 64.9% of the dataset 
 
-
+SELECT *
+FROM (SELECT country, Count(country) as companies_per_country 
+FROM layoffs_staging_2
+GROUP BY country
+ORDER BY 2 DESC
+) AS t1
+JOIN  (SELECT country, total_laid_off, COUNT(country) as countries_with_nulls 
+FROM layoffs_staging_2
+GROUP BY 1,2
+HAVING total_laid_off IS NULL
+ORDER BY 3 DESC) AS t2 
+	ON t1.country = t2.country
+ORDER BY companies_per_country DESC
+;
+-- Here I just wanted to compare the available as have to the null values. This was just to understand if the null values had actually numeric values, would the ranking of which countries have the most layoffs change 
+-- As we can see there wouldn't necessarily be any change within the top 3 countries however, Brazil, Germany and the United Kingdom could present a fight for the 4th spot. A further loook also shows that Australia would most likely move ahead of Israel if all information was available 
