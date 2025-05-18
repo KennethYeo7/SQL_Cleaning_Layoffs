@@ -273,15 +273,15 @@ FROM layoffS_staging_2
 ; 
 -- Here we are looking for the average funds raised from the 10 companies that had the highest funds raised 
 
-SELECT country, Count(total_laid_off) as Layoffs_per_country
+SELECT country, SUM(total_laid_off) as Layoffs_per_country
 FROM layoffs_staging_2
 GROUP BY country 
 ORDER BY 2 DESC
 ;
--- Here we are looking at the amount of layoff per country from 2020-2023
--- the data could be skewed towards the U.S. as seen in regards to the query below, this dataset is heavily leaned towards the U.S. as they make up 64.9% of all data entries   
+-- Looking at top-down approach we are starting by looking at the amount of layoff per country from 2020-2023
+-- the data could be skewed towards the U.S. as seen in regards to the 2 queries below, this dataset is heavily leaned towards the U.S. as they make up 64.9% of all data entries   
 
-SELECT country, Count(country) as companies_per_country 
+SELECT country, count(country) as companies_per_country 
 FROM layoffs_staging_2
 GROUP BY country
 ORDER BY 2 DESC
@@ -315,4 +315,92 @@ ORDER BY 3 DESC) AS t2
 ORDER BY companies_per_country DESC
 ;
 -- Here I just wanted to compare the available as have to the null values. This was just to understand if the null values had actually numeric values, would the ranking of which countries have the most layoffs change 
--- As we can see there wouldn't necessarily be any change within the top 3 countries however, Brazil, Germany and the United Kingdom could present a fight for the 4th spot. A further loook also shows that Australia would most likely move ahead of Israel if all information was available 
+-- Looking at this data even though Canada had the 3 highest amount of companies that laid off employees they actually ranked around 8th for total laid off employees assuming that the missing data doesn't cause major change
+-- Looking at the bottom countries with the fewest reported layoffs we can assume that the data is underrepresented due to smaller population sizes or limited data availability, which may not accurately reflect the actual employment landscape.
+
+SELECT industry, SUM(total_laid_off) as Layoffs_per_industry
+FROM layoffs_staging_2
+GROUP BY industry  
+ORDER BY 2 DESC
+;
+-- Moving on tin the top-down approach we are moving on to the amount of layoffs per industry
+-- as we can see here Consumer and retail had the most amount of layoffs in 2020-2023 which makes sense as during covid consumers felt that the cost of living was getting higher and due to high amount of the population getting sick and missing work people had less money to spend 
+
+SELECT * 
+FROM (SELECT EXTRACT(YEAR FROM date) AS year, COUNT(*) AS layoffs_per_year, industry  
+FROM layoffs_staging_2
+GROUP BY year, industry
+HAVING industry = 'Consumer'
+ORDER BY 2 DESC) AS t1
+JOIN (SELECT EXTRACT(YEAR FROM date) AS year, COUNT(*) AS layoffs_per_year, industry  
+FROM layoffs_staging_2
+GROUP BY year, industry
+HAVING industry = 'Retail'
+ORDER BY 2 DESC) AS t2
+	ON t1.year = t2.year 
+;
+
+-- Here we can see that most of the layoffs here was in 2022 which could be represented as a lagging indcator as conumser spending is normally viewed this way 
+
+SELECT *
+FROM (SELECT industry, Count(total_laid_off) as Layoffs_per_industry
+FROM layoffs_staging_2
+GROUP BY industry  
+ORDER BY 2 DESC
+) AS I1
+JOIN ( SELECT industry, total_laid_off, COUNT(industry) as industry_with_nulls 
+FROM layoffs_staging_2
+GROUP BY 1,2
+HAVING total_laid_off IS NULL
+ORDER BY 3 DESC) AS I2
+	ON I1.industry = I2.industry
+ORDER BY Layoffs_per_industry DESC
+;
+-- When comparing the entries with available info vs without we can see that healthcare had a similar situation as Canada where they had a large amount of companies that laid off employees but the total amount of laid off employees was around 6th highest 
+-- We could also look at media vs cryto, cryto would most likely beat media in most layoffs which is somewhat interesting as cryto took off during covid due to "HYPE" that surrounded Doge coin and bitcoin  
+-- Looking at the bottom of the list we can see that Aerospace remained very stable, I think taking a look at the hiring of staff would be an interesting insight as we could see how much change actually occurred within this industry as it seemingly looks very stable
+
+SELECT EXTRACT(YEAR FROM date) AS year, COUNT(*) AS layoffs_per_year, industry  
+FROM layoffs_staging_2
+GROUP BY year, industry
+HAVING industry = 'Healthcare'
+ORDER BY 2 DESC
+;
+
+-- Here I just wanted to see when the layoffs were happening for healthcare, and as we can see, the vast majority of layoffs occurred in 2022 which somewhat makes sense as the healthcare sector was over staffed with temporary staff and contract workers to help fight off covid so seeing a decrease here isnt that suprising 
+
+SELECT EXTRACT(YEAR FROM date) AS year, COUNT(*) AS layoffs_per_year, industry  
+FROM layoffs_staging_2
+GROUP BY year, industry
+HAVING industry = 'Crypto'
+ORDER BY 2 DESC
+;
+-- Here i just wanted to see when the layoffs were happening for cryto, and I noticed that most of the reported cases were from 2022. This timing aligns with the period when economies were starting to recover from the COVID-19 pandemic. It seems likely that the downturn in crypto during that time was partly a reaction to the shift in economic conditions
+
+SELECT EXTRACT(YEAR FROM date) AS year, COUNT(*) AS layoffs_per_year
+FROM layoffs_staging_2
+GROUP BY year
+ORDER BY 2 DESC
+;
+
+-- I kept seeing a pattern where 2022 had the mostt amount of layoffs in each industry and thought "what if similar to the data being skewed towards the U.S., the data is skewed towards the year 2022." And as we can see that data is skewed toward the year 2022 as it represents more than 50% of the dataset 
+
+SELECT DISTINCT industry 
+FROM layoffs_staging_2
+;
+-- I noticed that companies like google were labeled as consumer but I believe that they are a more tech based company so I looked if "tech" was anywhere on the list as it was not the closet thing weas fin-tech but that is a separate category
+
+SELECT company, industry, SUM(total_laid_off) AS Layoffs_per_company, stage
+FROM layoffs_staging_2
+GROUP BY 1,2,4
+ORDER BY 3 DESC
+;
+-- here we can see that the companies with thge higest layoffs are some of the largest companies in the world so this makes sense
+
+SELECT stage, COUNT(stage)
+FROM layoffs_staging_2
+GROUP BY 1
+ORDER BY 2 DESC
+;
+-- I noticed that most of the companies with the highest layoffs were companies that were post IPO and wanted to check if the data was skewed towards post IPO companies but the distrbution somewhat makes sense however Unknown section takes up more of the dataset than I would like
+
